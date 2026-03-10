@@ -1,5 +1,13 @@
 import sqlite3
+def login():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute(
+        """
+    SELECT * FROM admin;
 
+"""
+    )
 def connect():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
