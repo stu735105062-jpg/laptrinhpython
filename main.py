@@ -117,10 +117,15 @@ def sua():
                     pass
 
 def hoan_thanh():
+    global selected_index
     if selected_index is None: return
     d = read()[selected_index]
-    update(selected_index, d[0], d[1], d[2], d[3], "Hoàn thành")
+    # preserve the "important" flag when marking as completed
+    imp_val = d[5] if len(d) > 5 else "0"
+    update(selected_index, d[0], d[1], d[2], d[3], "Hoàn thành", imp_val)
+    # refresh list and clear selection so the user knows nothing is selected
     show()
+    selected_index = None
 
 def xoa():
     if selected_index is not None:
@@ -139,12 +144,16 @@ loc_box = ttk.Combobox(filter_frame, values=["Tất cả", "Chưa hoàn thành",
 loc_box.current(0); loc_box.pack(side=LEFT, padx=5); loc_box.bind("<<ComboboxSelected>>", loc_du_lieu)
 
 # SỬA LỖI TẠI ĐÂY: Thêm 'text=' vào các hàm heading
+# Configure columns with center alignment and allow them to stretch
 tree = ttk.Treeview(root, columns=(1, 2, 3), show="headings")
-tree.heading(1, text="Công việc")
-tree.heading(2, text="Deadline")
-tree.heading(3, text="Trạng thái")
-tree.column(1, width=200); tree.column(2, width=100); tree.column(3, width=100)
-tree.pack(fill=BOTH, expand=YES, padx=20)
+tree.heading(1, text="Công việc", anchor=CENTER)
+tree.heading(2, text="Deadline", anchor=CENTER)
+tree.heading(3, text="Trạng thái", anchor=CENTER)
+# set initial widths and allow stretching so the table fills the window
+tree.column(1, width=250, minwidth=120, anchor=CENTER, stretch=YES)
+tree.column(2, width=120, minwidth=80, anchor=CENTER, stretch=YES)
+tree.column(3, width=120, minwidth=80, anchor=CENTER, stretch=YES)
+tree.pack(fill=BOTH, expand=YES, padx=20, pady=5)
 tree.bind("<<TreeviewSelect>>", chon)
 
 btn_frame = ttk.Frame(root); btn_frame.pack(pady=20)
