@@ -1,178 +1,130 @@
 from database import *
 from tkinter import *
-from tkinter import ttk
-from datetime import *
+from tkinter import ttk, messagebox
 import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
-from calender import DatePickerDialog
 from add_work import DataEntryForm
+from datetime import datetime
 
 connect()
+root = ttkb.Window(themename="superhero")
+root.title("Quản lý công việc chuyên nghiệp")
+root.geometry("800x700")
 
 selected_index = None
 
-# chọn ngày
-def mo_lich():
-    dialog = DatePickerDialog(
-        parent=root,
-        title="Choose a Date",
-        firstweekday=0, # Start on Monday
-        startdate=date.today(),
-        bootstyle=PRIMARY
-    )
-    selected = dialog.date_selected
+# --- CÁC HÀM XỬ LÝ DỮ LIỆU ---
+
+def show(filter_val="Tất cả"):
+    for i in tree.get_children(): tree.delete(i)
+    data = read()
+    today = datetime.now()
     
-    if selected:
-        selected = f"{selected.strftime('%B %d, %Y')}"
-        deadline.set(selected)
-    else:
-        return
+    for idx, row in enumerate(data):
+        # row: [work, des, date, time, status]
+        if filter_val == "Tất cả" or row[4] == filter_val:
+            is_expired = False
+            if row[4] == "Chưa hoàn thành":
+                try:
+                    deadline = datetime.strptime(row[2], '%d/%m/%Y')
+                    if deadline < today and deadline.date() != today.date():
+                        is_expired = True
+                except: pass
+            
+            iid = tree.insert('', END, iid=idx, values=(row[0], row[2], row[4]))
+            if is_expired:
+                tree.item(iid, tags=('expired',))
+    
+    tree.tag_configure('expired', foreground='#FF5555', font=('Arial', 10, 'bold'))
 
-def add_work():
+def loc_du_lieu(event):
+    show(loc_box.get())
+
+def check_alerts():
+    today = datetime.now()
+    expired_tasks = []
+    for row in read():
+        if row[4] == "Chưa hoàn thành":
+            try:
+                deadline = datetime.strptime(row[2], '%d/%m/%Y')
+                if deadline < today and deadline.date() != today.date():
+                    expired_tasks.append(row[0])
+            except: continue
+    if expired_tasks:
+        messagebox.showwarning("Cảnh báo quá hạn", f"Bạn có {len(expired_tasks)} việc quá hạn:\n- " + "\n- ".join(expired_tasks[:3]))
+
+# --- CÁC HÀM GIAO DIỆN ---
+
+def xem_chi_tiet():
+    if selected_index is None: return
+    data = read()[selected_index]
     top = ttkb.Toplevel(root)
-    top.title("Add Work")
-    top.resizable(False, False)
-    DataEntryForm(top)
+    top.title("Chi tiết công việc")
+    top.geometry("400x300")
+    for label, val in [("Việc", data[0]), ("Mô tả", data[1]), ("Hạn", f"{data[2]} {data[3]}"), ("Trạng thái", data[4])]:
+        ttkb.Label(top, text=f"{label}: {val}", wraplength=350).pack(pady=5, padx=10)
 
+def them():
+    top = ttkb.Toplevel(root)
+    form = DataEntryForm(top)
+    for w in form.winfo_children():
+        if isinstance(w, ttk.Frame):
+            for b in w.winfo_children():
+                if b['text'] == "Lưu": b.configure(command=lambda: [form.on_submit(), show(), top.destroy()])
 
-# hiển thị
-def show():
+def sua():
+    if selected_index is None: return
+    data = read()[selected_index]
+    top = ttkb.Toplevel(root)
+    form = DataEntryForm(top)
+    form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2])
+    
+    def do_update():
+        update(selected_index, form.work_name.get(), form.work_des.get(), 
+               form.date_deadline.get(), f"{form.hour.get()}:{form.minute.get()}", data[4])
+        show(); top.destroy()
+        
+    for w in form.winfo_children():
+        if isinstance(w, ttk.Frame):
+            for b in w.winfo_children():
+                if b['text'] == "Lưu": b.configure(text="Cập nhật", command=do_update)
 
-    for i in tree.get_children():
-        tree.delete(i)
+def hoan_thanh():
+    if selected_index is None: return
+    d = read()[selected_index]
+    update(selected_index, d[0], d[1], d[2], d[3], "Hoàn thành")
+    show()
 
-    cv = read()
-
-    for i in cv:
-        tree.insert('',END,values=i)
-
-
-# xoá
 def xoa():
-    global selected_index
-
-    if selected_index!=None:
+    if selected_index is not None:
         delete(selected_index)
         show()
 
-
-# sửa
-def sua():
-    global selected_index
-
-    if selected_index!=None:
-        line = task.get()+'-'+deadline.get()+'-'+status.get()
-        update(selected_index,line)
-        show()
-
-
-# chọn item
 def chon(event):
     global selected_index
-
     item = tree.selection()
+    if item: selected_index = int(item[0])
 
-    if item:
-        selected_index = tree.index(item)
+# --- GIAO DIỆN CHÍNH ---
+filter_frame = ttk.Frame(root); filter_frame.pack(pady=10)
+ttkb.Label(filter_frame, text="Lọc:").pack(side=LEFT)
+loc_box = ttk.Combobox(filter_frame, values=["Tất cả", "Chưa hoàn thành", "Hoàn thành"], state="readonly")
+loc_box.current(0); loc_box.pack(side=LEFT, padx=5); loc_box.bind("<<ComboboxSelected>>", loc_du_lieu)
 
-        data = tree.item(item)['values']
+# SỬA LỖI TẠI ĐÂY: Thêm 'text=' vào các hàm heading
+tree = ttk.Treeview(root, columns=(1, 2, 3), show="headings")
+tree.heading(1, text="Công việc")
+tree.heading(2, text="Deadline")
+tree.heading(3, text="Trạng thái")
+tree.column(1, width=200); tree.column(2, width=100); tree.column(3, width=100)
+tree.pack(fill=BOTH, expand=YES, padx=20)
+tree.bind("<<TreeviewSelect>>", chon)
 
-        task.set(data[0])
-        deadline.set(data[1])
-        status.set(data[2])
-
-
-# lọc trạng thái
-def loc():
-
-    for i in tree.get_children():
-        tree.delete(i)
-
-    cv = read()
-
-    for i in cv:
-        if i[2] == loc_status.get():
-            tree.insert('',END,values=i)
-
-
-# nhắc việc quá hạn
-def nhac_viec():
-
-    for i in tree.get_children():
-        tree.delete(i)
-
-    today = date.today()
-
-    cv = read()
-
-    for i in cv:
-
-        if i[2] == "Hoàn thành":
-            continue
-
-        try:
-            d = datetime.strptime(i[1],"%d/%m/%Y").date()
-
-            if d < today:
-                tree.insert('',END,values=("QUÁ HẠN: "+i[0],i[1],i[2]))
-
-        except:
-            pass
-
-
-# GUI
-root = Tk()
-root.title("Quản lý công việc")
-root.geometry("650x550")
-
-task = StringVar()
-deadline = StringVar()
-status = StringVar(value="Chưa hoàn thành")
-loc_status = StringVar()
-
-Label(root,text="QUẢN LÝ CÔNG VIỆC",
-      font=("Arial",18,"bold")).pack(pady=10)
-
-# bảng
-frm = Frame(root)
-frm.pack()
-
-tree = ttk.Treeview(frm,columns=(1,2,3),show="headings",height=8)
-
-tree.heading(1,text="Công việc")
-tree.heading(2,text="Deadline")
-tree.heading(3,text="Trạng thái")
-
-tree.pack()
-
-tree.bind("<<TreeviewSelect>>",chon)
-
-# lọc
-filter_frame = Frame(root)
-filter_frame.pack(pady=10)
-
-Label(filter_frame,text="Lọc trạng thái").pack(side=LEFT)
-
-loc_box = ttk.Combobox(filter_frame,
-                       textvariable=loc_status,
-                       width=20,
-                       state="readonly")
-
-loc_box['values'] = ("Chưa hoàn thành","Đang làm","Hoàn thành")
-loc_box.pack(side=LEFT,padx=5)
-
-Button(filter_frame,text="Lọc",command=loc).pack(side=LEFT)
-
-# nút chức năng
-btn = Frame(root)
-btn.pack(pady=10)
-
-Button(btn,text="Thêm",width=10,command=add_work).pack(side=LEFT,padx=5)
-Button(btn,text="Sửa",width=10,command=sua).pack(side=LEFT,padx=5)
-Button(btn,text="Xoá",width=10,command=xoa).pack(side=LEFT,padx=5)
-Button(btn,text="Xem",width=10,command=show).pack(side=LEFT,padx=5)
-Button(btn,text="Nhắc việc",width=10,command=nhac_viec).pack(side=LEFT,padx=5)
+btn_frame = ttk.Frame(root); btn_frame.pack(pady=20)
+for txt, cmd, style in [("👁 Xem", xem_chi_tiet, INFO), ("✚ Thêm", them, SUCCESS), 
+                        ("✎ Sửa", sua, WARNING), ("✔ Hoàn thành", hoan_thanh, PRIMARY), ("✘ Xóa", xoa, DANGER)]:
+    ttkb.Button(btn_frame, text=txt, command=cmd, bootstyle=style).pack(side=LEFT, padx=5)
 
 show()
-
+check_alerts()
 root.mainloop()
