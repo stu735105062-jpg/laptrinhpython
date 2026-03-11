@@ -1,7 +1,11 @@
 from database import *
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from datetime import *
+import ttkbootstrap as ttkb
+from ttkbootstrap.constants import *
+from calender import DatePickerDialog
+from add_work import DataEntryForm
 
 connect()
 
@@ -9,35 +13,26 @@ selected_index = None
 
 # chọn ngày
 def mo_lich():
-    top = Toplevel(root)
-    top.title("Chọn ngày")
-    top.geometry("250x250")
-
-    def chon_ngay(d):
-        selected = f"{d:02d}/{date.today().month:02d}/{date.today().year}"
+    dialog = DatePickerDialog(
+        parent=root,
+        title="Choose a Date",
+        firstweekday=0, # Start on Monday
+        startdate=date.today(),
+        bootstyle=PRIMARY
+    )
+    selected = dialog.date_selected
+    
+    if selected:
+        selected = f"{selected.strftime('%B %d, %Y')}"
         deadline.set(selected)
-        top.destroy()
-
-    for i in range(1,32):
-        r=(i-1)//7
-        c=(i-1)%7
-        Button(top,text=i,width=4,
-               command=lambda x=i:chon_ngay(x)).grid(row=r,column=c)
-
-
-# thêm
-def add():
-    if not task.get() or not deadline.get():
-        messagebox.showwarning("Lỗi","Nhập đầy đủ")
+    else:
         return
 
-    line = task.get()+'-'+deadline.get()+'-'+status.get()
-
-    write(line)
-    show()
-
-    task.set("")
-    deadline.set("")
+def add_work():
+    top = ttkb.Toplevel(root)
+    top.title("Add Work")
+    top.resizable(False, False)
+    DataEntryForm(top)
 
 
 # hiển thị
@@ -152,25 +147,6 @@ tree.pack()
 
 tree.bind("<<TreeviewSelect>>",chon)
 
-# form nhập
-form = Frame(root)
-form.pack(pady=10)
-
-Label(form,text="Tên việc").grid(row=0,column=0)
-Entry(form,textvariable=task,width=40).grid(row=0,column=1)
-
-Label(form,text="Deadline").grid(row=1,column=0)
-
-Entry(form,textvariable=deadline,width=30).grid(row=1,column=1,sticky=W)
-
-Button(form,text="📅",command=mo_lich).grid(row=1,column=1,sticky=E)
-
-Label(form,text="Trạng thái").grid(row=2,column=0)
-
-cb = ttk.Combobox(form,textvariable=status,width=37,state="readonly")
-cb['values'] = ("Chưa hoàn thành","Đang làm","Hoàn thành")
-cb.grid(row=2,column=1)
-
 # lọc
 filter_frame = Frame(root)
 filter_frame.pack(pady=10)
@@ -191,7 +167,7 @@ Button(filter_frame,text="Lọc",command=loc).pack(side=LEFT)
 btn = Frame(root)
 btn.pack(pady=10)
 
-Button(btn,text="Thêm",width=10,command=add).pack(side=LEFT,padx=5)
+Button(btn,text="Thêm",width=10,command=add_work).pack(side=LEFT,padx=5)
 Button(btn,text="Sửa",width=10,command=sua).pack(side=LEFT,padx=5)
 Button(btn,text="Xoá",width=10,command=xoa).pack(side=LEFT,padx=5)
 Button(btn,text="Xem",width=10,command=show).pack(side=LEFT,padx=5)

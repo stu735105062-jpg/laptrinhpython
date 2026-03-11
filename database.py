@@ -15,9 +15,11 @@ def connect():
     c.execute("""
     CREATE TABLE IF NOT EXISTS congviec(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        task TEXT,
-        deadline TEXT,
-        status TEXT
+        work TEXT,
+        des TEXT,
+        deadline_date TEXT,
+        deadline_time TEXT,
+        status TEXT        
     )
     """)
 
@@ -25,15 +27,12 @@ def connect():
     conn.close()
 
 
-def write(line):
-    t = line.split('-')
-
+def write(task_data):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
     c.execute(
-        "INSERT INTO congviec(task,deadline,status) VALUES(?,?,?)",
-        (t[0], t[1], t[2])
+        "INSERT INTO congviec(work,des,deadline_date,deadline_time,status) VALUES(?,?,?,?,?)",task_data
     )
 
     conn.commit()
@@ -44,7 +43,7 @@ def read():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("SELECT task,deadline,status FROM congviec")
+    c.execute("SELECT work,des,deadline_date,deadline_time,status FROM congviec")
     data = c.fetchall()
 
     conn.close()
