@@ -70,24 +70,51 @@ def them():
     for w in form.winfo_children():
         if isinstance(w, ttk.Frame):
             for b in w.winfo_children():
-                if b['text'] == "Lưu": b.configure(command=lambda: [form.on_submit(), show(), top.destroy()])
+                try:
+                    if b.cget("text") == "Lưu":
+                        b.configure(command=lambda: [form.on_submit(), show(), top.destroy()])
+                except Exception:
+                    pass
 
 def sua():
     if selected_index is None: return
     data = read()[selected_index]
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
-    form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2])
+    form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2]); 
+    
+    time_str = data[3]
+    if ":" in time_str:
+        h, m = time_str.split(":")
+        form.hour.set(h)
+        form.minute.set(m)
+    
+    imp_val = data[5]
+    if isinstance(imp_val, str) and imp_val.lower() == "false":
+        form.important.set("0")
+    elif str(imp_val).lower() in ("1", "true"):
+        form.important.set("1")
+    else:
+        try:
+            form.important.set(str(int(imp_val)))
+        except (ValueError, TypeError):
+            form.important.set("0")
     
     def do_update():
-        update(selected_index, form.work_name.get(), form.work_des.get(), 
-               form.date_deadline.get(), f"{form.hour.get()}:{form.minute.get()}", data[4])
-        show(); top.destroy()
+        update(
+            selected_index,form.work_name.get(),form.work_des.get(), 
+            form.date_deadline.get(),f"{form.hour.get()}:{form.minute.get()}",data[4],form.important.get())
+        show()
+        top.destroy()
         
     for w in form.winfo_children():
         if isinstance(w, ttk.Frame):
             for b in w.winfo_children():
-                if b['text'] == "Lưu": b.configure(text="Cập nhật", command=do_update)
+                try:
+                    if b.cget("text") == "Lưu":
+                        b.configure(text="Cập nhật", command=do_update)
+                except Exception:
+                    pass
 
 def hoan_thanh():
     if selected_index is None: return

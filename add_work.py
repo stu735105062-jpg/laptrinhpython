@@ -15,6 +15,7 @@ class DataEntryForm(ttk.Frame):
         self.date_deadline = ttk.StringVar(value=datetime.date.today().strftime('%d/%m/%Y'))
         self.hour = ttk.StringVar(value="00")
         self.minute = ttk.StringVar(value="00")
+        self.important = ttk.StringVar(value="0")
 
         hdr_txt = "Hãy nhập công việc cần làm" 
         ttk.Label(master=self, text=hdr_txt, font=("Arial", 12, "bold")).pack(pady=10)
@@ -23,6 +24,7 @@ class DataEntryForm(ttk.Frame):
         self.create_form_entry("Mô tả", self.work_des)
         self.create_date_entry()
         self.create_time_entry()
+        self.create_important_check()
         self.create_buttonbox()
 
     def create_form_entry(self, label, variable):
@@ -57,13 +59,30 @@ class DataEntryForm(ttk.Frame):
         ttk.Button(container, text="Lưu", command=self.on_submit, bootstyle=SUCCESS).pack(side=RIGHT, padx=5)
         ttk.Button(container, text="Hủy", command=self.master.destroy, bootstyle=DANGER).pack(side=RIGHT, padx=5)
 
+    def create_important_check(self):
+        container = ttk.Frame(self)
+        container.pack(fill=X, expand=YES, pady=5)
+
+        lbl = ttk.Label(master=container, text="Important", width=12)
+        lbl.pack(side=LEFT, padx=5)
+
+        chk = ttk.Checkbutton(
+            master=container, 
+            variable=self.important, 
+            onvalue="1",
+            offvalue="0",
+            bootstyle="danger-round-toggle"
+        )
+        chk.pack(side=LEFT, padx=5)
+
     def on_submit(self):
         task_data = (
             self.work_name.get(),
             self.work_des.get(),
             self.date_deadline.get(),
             f"{self.hour.get()}:{self.minute.get()}",
-            "Chưa hoàn thành"
+            "Chưa hoàn thành",
+            self.important.get()
         )
         write(task_data)
         if self.on_save:
