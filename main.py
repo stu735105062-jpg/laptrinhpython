@@ -159,10 +159,12 @@ def sua():
                     pass
 
 def hoan_thanh():
+    global selected_index
     if selected_index is None: return
     d = read()[selected_index]
     update(selected_index, d[0], d[1], d[2], d[3], "Hoàn thành", d[5])
     show()
+    selected_index = None
 
 def xoa():
     if selected_index is not None:
