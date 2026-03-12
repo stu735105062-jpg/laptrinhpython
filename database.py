@@ -58,3 +58,11 @@ def update(index, work, des, date, time, status, important):
         conn.commit()
         
         conn.close()
+
+def get_work_by_date(date):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("SELECT work, des, deadline_date, deadline_time, status, important FROM congviec WHERE deadline_date=? ORDER BY dealine_date ASC", (date,))
+    data = c.fetchall()
+    conn.close()
+    return [list(i) for i in data]
