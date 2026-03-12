@@ -50,14 +50,12 @@ def open_calendar():
 
 def show(filter_val="Tất cả"):
     for i in tree.get_children(): tree.delete(i)
-    data = read()
+    data = get_work_by_date(time_make)
     today = now
     
-    for idx, row in enumerate(data):
-        if row[2] != time_make:
-            continue
-            
-        # row: [work, des, date, time, status, importain]
+    for row in data:
+        db_id = row[0]
+        # row: [id, work, des, date, time, status, importain]
         if filter_val == "Tất cả" or row[4] == filter_val:
             is_expired = False
             if row[4] == "Chưa hoàn thành":
@@ -68,12 +66,12 @@ def show(filter_val="Tất cả"):
                         is_expired = True
                 except: pass
             
-            if row[5] == 1:
-                row[5] = 'Có'
+            if row[6] == 1:
+                row[6] = 'Có'
             else:
-                row[5] = 'Không'
+                row[6] = 'Không'
 
-            iid = tree.insert('', END, iid=idx, values=(row[0], row[3], row[4], row[5]))
+            iid = tree.insert('', END, iid=db_id, values=(row[1], row[4], row[5], row[6]))
             if is_expired:
                 tree.item(iid, tags=('expired',))
     
@@ -171,10 +169,12 @@ def xoa():
         delete(selected_index)
         show()
 
+selected_id = None
+
 def chon(event):
-    global selected_index
+    global selected_id
     item = tree.selection()
-    if item: selected_index = int(item[0])
+    if item: selected_id = int(item[0])
 
 # --- GIAO DIỆN CHÍNH ---
 filter_frame = ttk.Frame(root); filter_frame.pack(pady=10)
