@@ -39,22 +39,22 @@ def get_ids():
     conn.close()
     return ids
 
-def delete(index):
+def delete(id_xoa):
     ids = get_ids()
     if index < len(ids):
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
-        c.execute("DELETE FROM congviec WHERE id=?", (ids[index],))
+        c.execute("DELETE FROM congviec WHERE id=?", (id_xoa,))
         conn.commit()
         conn.close()
 
-def update(index, work, des, date, time, status, important):
+def update(id_sua, work, des, date, time, status, important):
     ids = get_ids()
     if index < len(ids):
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
         c.execute("UPDATE congviec SET work=?, des=?, deadline_date=?, deadline_time=?, status=?, important=? WHERE id=?", 
-                  (work, des, date, time, status, important, ids[index]))
+                  (work, des, date, time, status, important, id_sua))
         conn.commit()
         
         conn.close()
@@ -62,7 +62,7 @@ def update(index, work, des, date, time, status, important):
 def get_work_by_date(date):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
-    c.execute("SELECT work, des, deadline_date, deadline_time, status, important FROM congviec WHERE deadline_date=? ORDER BY dealine_date ASC", (date,))
+    c.execute("SELECT id, work, des, deadline_date, deadline_time, status, important FROM congviec WHERE deadline_date=? ORDER BY deadline_time ASC", (date,))
     data = c.fetchall()
     conn.close()
     return [list(i) for i in data]
