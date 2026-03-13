@@ -28,8 +28,6 @@ root.resizable(False,False)
 root.title("Quản lý công việc chuyên nghiệp")
 root.geometry(f'{width_app_default}x{hight_app_default}+{center_x}+{center_y}')
 
-selected_index = None
-
 now = time.localtime()
 year,month,day,*_= now
 make_time = datetime.date(year=year,month=month,day=day)
@@ -96,8 +94,8 @@ def check_alerts():
 # --- CÁC HÀM GIAO DIỆN ---
 
 def xem_chi_tiet():
-    if selected_index is None: return
-    data = read()[selected_index]
+    if selected_id is None: return
+    data = read()[selected_id-1]
     top = ttkb.Toplevel(root)
     top.title("Chi tiết công việc")
     top.geometry("400x300")
@@ -117,8 +115,8 @@ def them():
                     pass
 
 def sua():
-    if selected_index is None: return
-    data = read()[selected_index]
+    if selected_id is None: return
+    data = read()[selected_id-1]
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
     form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2]); 
@@ -142,7 +140,7 @@ def sua():
     
     def do_update():
         update(
-            selected_index,form.work_name.get(),form.work_des.get(), 
+            selected_id,form.work_name.get(),form.work_des.get(), 
             form.date_deadline.get(),f"{form.hour.get()}:{form.minute.get()}",data[4],form.important.get())
         show()
         top.destroy()
@@ -157,14 +155,19 @@ def sua():
                     pass
 
 def hoan_thanh():
-    if selected_index is None: return
-    d = read()[selected_index]
-    update(selected_index, d[0], d[1], d[2], d[3], "Hoàn thành", d[5])
-    show()
+    if selected_id is None: return
+    d = read()[selected_id-1]
+    
+    if d[4] == "Chưa hoàn thành":
+        update(selected_id, d[0], d[1], d[2], d[3], "Hoàn thành", d[5])
+        show()
+    else:
+        update(selected_id, d[0], d[1], d[2], d[3], "Chưa hoàn thành", d[5])
+        show()
 
 def xoa():
-    if selected_index is not None:
-        delete(selected_index)
+    if selected_id is not None:
+        delete(selected_id)
         show()
 
 selected_id = None
@@ -197,7 +200,7 @@ tree.bind("<<TreeviewSelect>>", chon)
 
 btn_frame = ttk.Frame(root); btn_frame.pack(pady=20)
 for txt, cmd, style in [("👁 Xem", xem_chi_tiet, INFO), ("✚ Thêm", them, SUCCESS), 
-                        ("✎ Sửa", sua, WARNING), ("✔ Hoàn thành", hoan_thanh, PRIMARY), ("✘ Xóa", xoa, DANGER)]:
+                        ("✎ Sửa", sua, WARNING), ("✔ Trạng thái", hoan_thanh, PRIMARY), ("✘ Xóa", xoa, DANGER)]:
     ttkb.Button(btn_frame, text=txt, command=cmd, bootstyle=style).pack(side=LEFT, padx=5)
 
 show()
