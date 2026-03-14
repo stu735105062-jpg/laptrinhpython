@@ -40,24 +40,27 @@ def get_ids():
     return ids
 
 def delete(id_xoa):
-    ids = get_ids()
-    if index < len(ids):
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-        c.execute("DELETE FROM congviec WHERE id=?", (id_xoa,))
-        conn.commit()
-        conn.close()
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM congviec WHERE id=?", (id_xoa,))
+    conn.commit()
+    conn.close()
 
 def update(id_sua, work, des, date, time, status, important):
-    ids = get_ids()
-    if index < len(ids):
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-        c.execute("UPDATE congviec SET work=?, des=?, deadline_date=?, deadline_time=?, status=?, important=? WHERE id=?", 
-                  (work, des, date, time, status, important, id_sua))
-        conn.commit()
-        
-        conn.close()
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("UPDATE congviec SET work=?, des=?, deadline_date=?, deadline_time=?, status=?, important=? WHERE id=?", 
+              (work, des, date, time, status, important, id_sua))
+    conn.commit()
+    conn.close()
+
+def get_task_by_id(task_id):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("SELECT id, work, des, deadline_date, deadline_time, status, important FROM congviec WHERE id=?", (task_id,))
+    row = c.fetchone()
+    conn.close()
+    return list(row) if row else None
 
 def get_work_by_date(date):
     conn = sqlite3.connect("database.db")

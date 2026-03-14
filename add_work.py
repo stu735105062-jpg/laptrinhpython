@@ -87,4 +87,4 @@ class DataEntryForm(ttk.Frame):
         write(task_data)
         if self.on_save:
             self.on_save()
-        self.master.destroy()
+        # Note: do not destroy the parent here; caller (e.g. dialog) should decide when to close.
