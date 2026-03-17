@@ -1,12 +1,14 @@
 from database import *
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
 from add_work import DataEntryForm
 from calender import DatePickerDialog
 import datetime 
 import time
+from windows_toasts import Toast, WindowsToaster
+from heapq import nlargest
 
 connect()
 root = ttkb.Window(themename="superhero")
@@ -28,14 +30,14 @@ root.resizable(False,False)
 root.title("Quản lý công việc chuyên nghiệp")
 root.geometry(f'{width_app_default}x{hight_app_default}+{center_x}+{center_y}')
 
-selected_id = None
-
 now = time.localtime()
 year,month,day,*_= now
 make_time = datetime.date(year=year,month=month,day=day)
 
 time_make = make_time.strftime("%d/%m/%Y")
 
+work_waitlist = {}
+for_later_waitlist = {}
 
 # --- CÁC HÀM XỬ LÝ DỮ LIỆU ---
 
@@ -49,61 +51,79 @@ def open_calendar():
         return time_make
 
 def show(filter_val="Tất cả"):
-    for i in tree.get_children():
-        tree.delete(i)
-
+    global work_waitlist
+    for i in tree.get_children(): tree.delete(i)
     data = get_work_by_date(time_make)
-    today = datetime.date.today()
+    today = datetime.datetime.now()
+    
+    work_waitlist.clear()
+    today_str = today.strftime("%d/%m/%Y")
+    today_data = get_work_by_date(today_str)
+    
+    for row in today_data:
+        # id, work, des, date, time, status, important
+        if row[5] == "Chưa hoàn thành":
+            id_work = row[0]
+            new_work = (row[1], row[4])
+            work_waitlist[new_work] = id_work
 
     for row in data:
-        db_id, work, des, deadline_date, deadline_time, status, important = row
-
-        if filter_val == "Tất cả" or status == filter_val:
+        db_id = row[0]
+        if filter_val == "Tất cả" or row[5] == filter_val:
             is_expired = False
-            if status == "Chưa hoàn thành":
+            if row[5] == "Chưa hoàn thành":
                 try:
-                    deadline = datetime.datetime.strptime(deadline_date, '%d/%m/%Y').date()
-                    if deadline < today:
+                    deadline = datetime.datetime.strptime(row[3], '%d/%m/%Y')
+                    if deadline.date() < today.date():
                         is_expired = True
-                except Exception:
-                    pass
+                except: pass
+            
+            if row[6] == 1:
+                row[6] = 'Có'
+            else:
+                row[6] = 'Không'
 
-            imp_text = 'Có' if str(important).lower() in ('1', 'true') else 'Không'
-
-            iid = tree.insert('', END, iid=db_id, values=(work, deadline_time, status, imp_text))
+            iid = tree.insert('', END, iid=db_id, values=(row[1],row[4], row[5], row[6]))
+            
             if is_expired:
                 tree.item(iid, tags=('expired',))
 
     tree.tag_configure('expired', foreground='#FF5555', font=('Arial', 10, 'bold'))
 
+notified_tasks = set()
+
+def time_to_noti():
+    if not work_waitlist:
+        root.after(1000, time_to_noti)
+        return
+
+    now_time = datetime.datetime.now()
+    current_time_str = now_time.strftime("%H:%M")
+
+    for (work, task_time), task_id in list(work_waitlist.items()):
+        if task_time == current_time_str and task_id not in notified_tasks:
+            noti(work)
+            notified_tasks.add(task_id)
+
+    root.after(1000, time_to_noti)
+
 def loc_du_lieu(event):
     show(loc_box.get())
 
-def check_alerts():
-    today = datetime.date.today()
-    expired_tasks = []
-    for row in read():
-        status = row[4]
-        if status == "Chưa hoàn thành":
-            try:
-                deadline = datetime.datetime.strptime(row[2], '%d/%m/%Y').date()
-                if deadline < today:
-                    expired_tasks.append(row[0])
-            except Exception:
-                continue
-    if expired_tasks:
-        messagebox.showwarning("Cảnh báo quá hạn", f"Bạn có {len(expired_tasks)} việc quá hạn:\n- " + "\n- ".join(expired_tasks[:3]))
+def noti(content):
+    title = WindowsToaster('Nhắc việc')
+    new_toast = Toast()
+    new_toast.text_fields = [content]
+    try:
+        title.show_toast(new_toast)
+    except: pass
 
 # --- CÁC HÀM GIAO DIỆN ---
 
 def xem_chi_tiet():
-    if selected_id is None:
-        return
-    data = get_task_by_id(selected_id)
-    if not data:
-        return
-
-    _, work, des, deadline_date, deadline_time, status, _ = data
+    if selected_id is None: return
+    data = get_work_by_id(selected_id)
+    if not data: return
     top = ttkb.Toplevel(root)
     top.title("Chi tiết công việc")
     top.geometry("400x300")
@@ -113,26 +133,25 @@ def xem_chi_tiet():
 def them():
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
-    # Ensure new tasks default to the currently selected date in the calendar view
-    form.date_deadline.set(time_make)
-
+    
+    def on_add_save():
+        if form.on_submit() is not False:
+            show()
+            top.destroy()
+            
     for w in form.winfo_children():
         if isinstance(w, ttk.Frame):
             for b in w.winfo_children():
                 try:
                     if b.cget("text") == "Lưu":
-                        b.configure(command=lambda: [form.on_submit(), show(), top.destroy()])
+                        b.configure(command=on_add_save)
                 except Exception:
                     pass
 
 def sua():
-    if selected_id is None:
-        return
-    data = get_task_by_id(selected_id)
-    if not data:
-        return
-
-    _, work, des, deadline_date, deadline_time, status, important = data
+    if selected_id is None: return
+    data = get_work_by_id(selected_id)
+    if not data: return
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
     form.work_name.set(work); form.work_des.set(des); form.date_deadline.set(deadline_date);
@@ -155,9 +174,13 @@ def sua():
             form.important.set("0")
 
     def do_update():
+        if form.work_name.get() == "":
+            messagebox.showerror("Lỗi", "Vui lòng nhập tên công việc", parent=top)
+            return
+            
         update(
-            selected_id, form.work_name.get(), form.work_des.get(), 
-            form.date_deadline.get(), f"{form.hour.get()}:{form.minute.get()}", status, form.important.get())
+            selected_id,form.work_name.get(),form.work_des.get(), 
+            form.date_deadline.get(),f"{form.hour.get()}:{form.minute.get()}",data[4],form.important.get())
         show()
         top.destroy()
         
@@ -171,19 +194,18 @@ def sua():
                     pass
 
 def hoan_thanh():
-    global selected_id
-    if selected_id is None:
-        return
-    d = get_task_by_id(selected_id)
-    if not d:
-        return
-    _, work, des, deadline_date, deadline_time, _, important = d
-    update(selected_id, work, des, deadline_date, deadline_time, "Hoàn thành", important)
-    show()
-    selected_id = None
+    if selected_id is None: return
+    d = get_work_by_id(selected_id)
+    if not d: return
+    
+    if d[4] == "Chưa hoàn thành":
+        update(selected_id, d[0], d[1], d[2], d[3], "Hoàn thành", d[5])
+        show()
+    else:
+        update(selected_id, d[0], d[1], d[2], d[3], "Chưa hoàn thành", d[5])
+        show()
 
 def xoa():
-    global selected_id
     if selected_id is not None:
         delete(selected_id)
         show()
@@ -221,9 +243,9 @@ tree.bind("<<TreeviewSelect>>", chon)
 
 btn_frame = ttk.Frame(root); btn_frame.pack(pady=20)
 for txt, cmd, style in [("👁 Xem", xem_chi_tiet, INFO), ("✚ Thêm", them, SUCCESS), 
-                        ("✎ Sửa", sua, WARNING), ("✔ Hoàn thành", hoan_thanh, PRIMARY), ("✘ Xóa", xoa, DANGER)]:
+                        ("✎ Sửa", sua, WARNING), ("✔ Trạng thái", hoan_thanh, PRIMARY), ("✘ Xóa", xoa, DANGER)]:
     ttkb.Button(btn_frame, text=txt, command=cmd, bootstyle=style).pack(side=LEFT, padx=5)
 
 show()
-check_alerts()
+time_to_noti()
 root.mainloop()

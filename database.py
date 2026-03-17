@@ -30,15 +30,6 @@ def read():
     conn.close()
     return [list(i) for i in data]
 
-def get_ids():
-    """Hàm phụ để lấy danh sách ID, phục vụ cho việc xóa/sửa"""
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("SELECT id FROM congviec")
-    ids = [row[0] for row in c.fetchall()]
-    conn.close()
-    return ids
-
 def delete(id_xoa):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
@@ -50,17 +41,10 @@ def update(id_sua, work, des, date, time, status, important):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
     c.execute("UPDATE congviec SET work=?, des=?, deadline_date=?, deadline_time=?, status=?, important=? WHERE id=?", 
-              (work, des, date, time, status, important, id_sua))
+                  (work, des, date, time, status, important, id_sua))
     conn.commit()
+        
     conn.close()
-
-def get_task_by_id(task_id):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("SELECT id, work, des, deadline_date, deadline_time, status, important FROM congviec WHERE id=?", (task_id,))
-    row = c.fetchone()
-    conn.close()
-    return list(row) if row else None
 
 def get_work_by_date(date):
     conn = sqlite3.connect("database.db")
@@ -69,3 +53,11 @@ def get_work_by_date(date):
     data = c.fetchall()
     conn.close()
     return [list(i) for i in data]
+
+def get_work_by_id(db_id):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("SELECT work, des, deadline_date, deadline_time, status, important FROM congviec WHERE id=?", (db_id,))
+    row = c.fetchone()
+    conn.close()
+    return list(row) if row else None
