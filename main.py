@@ -87,7 +87,7 @@ def show(filter_val="Tất cả"):
             
             if is_expired:
                 tree.item(iid, tags=('expired',))
-    
+
     tree.tag_configure('expired', foreground='#FF5555', font=('Arial', 10, 'bold'))
 
 notified_tasks = set()
@@ -127,7 +127,7 @@ def xem_chi_tiet():
     top = ttkb.Toplevel(root)
     top.title("Chi tiết công việc")
     top.geometry("400x300")
-    for label, val in [("Việc", data[0]), ("Mô tả", data[1]), ("Hạn", f"{data[2]} {data[3]}"), ("Trạng thái", data[4])]:
+    for label, val in [("Việc", work), ("Mô tả", des), ("Hạn", f"{deadline_date} {deadline_time}"), ("Trạng thái", status)]:
         ttkb.Label(top, text=f"{label}: {val}", wraplength=350).pack(pady=5, padx=10)
 
 def them():
@@ -154,15 +154,15 @@ def sua():
     if not data: return
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
-    form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2]); 
-    
-    time_str = data[3]
+    form.work_name.set(work); form.work_des.set(des); form.date_deadline.set(deadline_date);
+
+    time_str = deadline_time
     if ":" in time_str:
         h, m = time_str.split(":")
         form.hour.set(h)
         form.minute.set(m)
-    
-    imp_val = data[5]
+
+    imp_val = important
     if isinstance(imp_val, str) and imp_val.lower() == "false":
         form.important.set("0")
     elif str(imp_val).lower() in ("1", "true"):
@@ -172,7 +172,7 @@ def sua():
             form.important.set(str(int(imp_val)))
         except (ValueError, TypeError):
             form.important.set("0")
-    
+
     def do_update():
         if form.work_name.get() == "":
             messagebox.showerror("Lỗi", "Vui lòng nhập tên công việc", parent=top)
@@ -209,8 +209,7 @@ def xoa():
     if selected_id is not None:
         delete(selected_id)
         show()
-
-selected_id = None
+        selected_id = None
 
 def chon(event):
     global selected_id
@@ -230,11 +229,15 @@ ttk.Button(master=filter_frame, text="📅", command=open_calendar).pack(side=LE
 
 # SỬA LỖI TẠI ĐÂY: Thêm 'text=' vào các hàm heading
 tree = ttk.Treeview(root, columns=(1, 2, 3, 4), show="headings")
-tree.heading(1, text="Công việc")
-tree.heading(2, text="Deadline")
-tree.heading(3, text="Trạng thái")
-tree.heading(4, text="Quan trọng")
-tree.column(1, width=200); tree.column(2, width=100); tree.column(3, width=100), tree.column(4, width=100)
+tree.heading(1, text="Công việc", anchor=W)
+tree.heading(2, text="Deadline", anchor=CENTER)
+tree.heading(3, text="Trạng thái", anchor=CENTER)
+tree.heading(4, text="Quan trọng", anchor=CENTER)
+# Align cell text to match header alignment
+tree.column(1, width=200, anchor=W, stretch=YES)
+tree.column(2, width=100, anchor=CENTER, stretch=YES)
+tree.column(3, width=100, anchor=CENTER, stretch=YES)
+tree.column(4, width=100, anchor=CENTER, stretch=YES)
 tree.pack(fill=BOTH, expand=YES, padx=20)
 tree.bind("<<TreeviewSelect>>", chon)
 
