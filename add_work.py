@@ -1,5 +1,6 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from tkinter import messagebox
 from calender import DatePickerDialog
 import datetime
 from database import write
@@ -76,6 +77,15 @@ class DataEntryForm(ttk.Frame):
         chk.pack(side=LEFT, padx=5)
 
     def on_submit(self):
+        if int(self.hour.get()) < 10 and len(self.hour.get()) == 1:
+            self.hour.set("0" + self.hour.get())
+        if int(self.minute.get()) < 10 and len(self.minute.get()) == 1:
+            self.minute.set("0" + self.minute.get())
+
+        if self.work_name.get() == "":
+            messagebox.showerror("Lỗi", "Vui lòng nhập tên công việc",parent=self.master)
+            return False
+
         task_data = (
             self.work_name.get(),
             self.work_des.get(),
