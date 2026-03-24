@@ -133,9 +133,10 @@ class DatePickerDialog:
             master=self.frm_title,
             textvariable=self.titlevar,
             anchor=CENTER,
+            justify=CENTER,
             font="-weight bold",
         )
-        self.title.pack(side=LEFT, fill=X, expand=YES)
+        self.title.pack(side=LEFT, fill=X, expand=YES, padx=10)
 
         self.next_period = ttk.Button(master=self.frm_title, text="▶", command=self.on_next_month)
         self.next_period.pack(side=LEFT)
@@ -156,10 +157,9 @@ class DatePickerDialog:
             ).pack(side=LEFT, fill=X, expand=YES)
 
     def _set_title(self) -> None:
-        _titledate_month = MessageCatalog.translate(f'{self.date.strftime("%B")}')
-        _titledate_year = f'{self.date.strftime("%Y")}'
-        _titledate = f'{_titledate_month} {_titledate_year}'
-        self.titlevar.set(value=_titledate.capitalize())
+        # Use a consistent Vietnamese-style month label, e.g. "Tháng 3 2026".
+        # Using the numeric month avoids layout issues with long translated month names.
+        self.titlevar.set(value=f"Tháng {self.date.month} {self.date.year}")
 
     def _current_month_days(self) -> None:
         """Fetch day numbers and dates for current month."""
