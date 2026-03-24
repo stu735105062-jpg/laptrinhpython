@@ -6,12 +6,6 @@ def connect():
     c.execute("""CREATE TABLE IF NOT EXISTS congviec(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         work TEXT, des TEXT, deadline_date TEXT, deadline_time TEXT, status TEXT, important BOOLEAN DEFAULT "False")""")
-    c.execute("""CREATE TABLE IF NOT EXISTS admin(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL, password TEXT NOT NULL)""")
-    c.execute("SELECT COUNT(*) FROM admin")
-    if c.fetchone()[0] == 0:
-        c.execute("INSERT INTO admin (username, password) VALUES ('admin', '123')")
     conn.commit()
     conn.close()
 

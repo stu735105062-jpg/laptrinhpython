@@ -1,5 +1,6 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from ttkbootstrap.scrolled import ScrolledText
 from tkinter import messagebox
 from calender import DatePickerDialog
 import datetime
@@ -22,7 +23,7 @@ class DataEntryForm(ttk.Frame):
         ttk.Label(master=self, text=hdr_txt, font=("Arial", 12, "bold")).pack(pady=10)
 
         self.create_form_entry("Công việc", self.work_name)
-        self.create_form_entry("Mô tả", self.work_des)
+        self.create_dis_entry("Mô tả", self.work_des)
         self.create_date_entry()
         self.create_time_entry()
         self.create_important_check()
@@ -32,7 +33,31 @@ class DataEntryForm(ttk.Frame):
         container = ttk.Frame(self)
         container.pack(fill=X, expand=YES, pady=5)
         ttk.Label(master=container, text=label, width=10).pack(side=LEFT, padx=5)
-        ttk.Entry(master=container, textvariable=variable).pack(side=LEFT, padx=5, fill=X, expand=YES)
+        ttk.Entry(master=container, textvariable=variable, bootstyle="primary",).pack(side=LEFT, padx=5, fill=X, expand=YES)
+
+    def create_dis_entry(self, lable, variable):
+        container = ttk.Frame(self)
+        container.pack(fill=X, expand=YES, pady=5)
+        ttk.Label(master=container, text=lable, width=10).pack(side=LEFT, padx=5)
+        
+        # We manually sync the text box and the string variable to preserve compatibility.
+        txt = ScrolledText(master=container, height=4, bootstyle="primary")
+        txt.pack(side=LEFT, padx=5, fill=X, expand=YES)
+        
+        txt.insert("1.0", variable.get())
+        
+        def on_key_release(event):
+            variable.set(txt.get("1.0", "end-1c"))
+        txt.bind('<KeyRelease>', on_key_release)
+        txt.bind('<FocusOut>', on_key_release)
+        txt.bind('<<Paste>>', lambda e: txt.after(50, lambda: on_key_release(None)))
+        
+        def update_textbox(*args):
+            current_txt = txt.get("1.0", "end-1c")
+            if current_txt != variable.get():
+                txt.delete("1.0", "end")
+                txt.insert("1.0", variable.get())
+        variable.trace_add("write", update_textbox)
 
     def create_date_entry(self):
         container = ttk.Frame(self)
@@ -42,7 +67,7 @@ class DataEntryForm(ttk.Frame):
         ttk.Button(master=container, text="📅", command=self.open_calendar).pack(side=LEFT, padx=5)
 
     def open_calendar(self):
-        dialog = DatePickerDialog(parent=self.master)
+        dialog = DatePickerDialog(parent=self.master, disable_past=True)
         if dialog.date_selected:
             self.date_deadline.set(dialog.date_selected.strftime('%d/%m/%Y'))
 
@@ -64,7 +89,7 @@ class DataEntryForm(ttk.Frame):
         container = ttk.Frame(self)
         container.pack(fill=X, expand=YES, pady=5)
 
-        lbl = ttk.Label(master=container, text="Important", width=12)
+        lbl = ttk.Label(master=container, text="Quan trọng", width=12)
         lbl.pack(side=LEFT, padx=5)
 
         chk = ttk.Checkbutton(

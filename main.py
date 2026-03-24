@@ -8,7 +8,6 @@ from calender import DatePickerDialog
 import datetime 
 import time
 from windows_toasts import Toast, WindowsToaster
-from heapq import nlargest
 
 connect()
 root = ttkb.Window(themename="superhero")
@@ -125,10 +124,45 @@ def xem_chi_tiet():
     data = get_work_by_id(selected_id)
     if not data: return
     top = ttkb.Toplevel(root)
-    top.title("Chi tiết công việc")
-    top.geometry("400x300")
-    for label, val in [("Việc", data[0]), ("Mô tả", data[1]), ("Hạn", f"{data[2]} {data[3]}"), ("Trạng thái", data[4])]:
-        ttkb.Label(top, text=f"{label}: {val}", wraplength=350).pack(pady=5, padx=10)
+    form = DataEntryForm(top)
+    form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2]); 
+    
+    time_str = data[3]
+    if ":" in time_str:
+        h, m = time_str.split(":")
+        form.hour.set(h)
+        form.minute.set(m)
+    
+    imp_val = data[5]
+    if isinstance(imp_val, str) and imp_val.lower() == "false":
+        form.important.set("0")
+    elif str(imp_val).lower() in ("1", "true"):
+        form.important.set("1")
+    else:
+        try:
+            form.important.set(str(int(imp_val)))
+        except (ValueError, TypeError):
+            form.important.set("0")
+            
+    def disable_all(widget):
+        for w in widget.winfo_children():
+            try:
+                if isinstance(w, ttk.Button):
+                    text = w.cget("text")
+                    if text in ("Lưu", "📅"):
+                        w.destroy()
+                        continue
+                    elif text == "Hủy":
+                        w.configure(text="Quay lại", bootstyle=INFO)
+                        continue
+                w_class = w.winfo_class()
+                if w_class in ("TEntry", "TSpinbox", "TCheckbutton", "Text"):
+                    w.configure(state="disabled")
+            except Exception:
+                pass
+            disable_all(w)
+            
+    disable_all(form)
 
 def them():
     top = ttkb.Toplevel(root)

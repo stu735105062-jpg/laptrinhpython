@@ -15,6 +15,7 @@ class DatePickerDialog:
             firstweekday: int = 6,
             startdate: Optional[date] = None,
             bootstyle: str = PRIMARY,
+            disable_past: bool = False,
     ) -> None:
         try:
             locale.setlocale(locale.LC_TIME, "")
@@ -33,6 +34,7 @@ class DatePickerDialog:
         self.firstweekday = firstweekday
         self.startdate = startdate or datetime.today().date()
         self.bootstyle = bootstyle or PRIMARY
+        self.disable_past = disable_past
 
         self.date_selected = self.startdate
         self.date = startdate or self.date_selected
@@ -117,6 +119,8 @@ class DatePickerDialog:
                         padding=5,
                         command=selected,
                     )
+                    if self.disable_past and self.monthdates[row][col] < datetime.today().date():
+                        btn.configure(state=DISABLED, bootstyle="secondary-toolbutton")
                     btn.grid(row=row, column=col, sticky=NSEW)
 
     def _draw_titlebar(self) -> None:
