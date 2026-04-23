@@ -124,6 +124,7 @@ def noti(content):
 # --- CÁC HÀM GIAO DIỆN ---
 
 def xem_chi_tiet():
+    global selected_id
     if selected_id is None: return
     data = get_work_by_id(selected_id)
     if not data: return
@@ -174,7 +175,7 @@ def them():
     
     def on_add_save():
         if form.on_submit() is not False:
-            show()
+            show(loc_box.get())
             top.destroy()
             
     for w in form.winfo_children():
@@ -187,6 +188,7 @@ def them():
                     pass
 
 def sua():
+    global selected_id
     if selected_id is None: return
     data = get_work_by_id(selected_id)
     if not data: return
@@ -220,7 +222,7 @@ def sua():
         update(
             selected_id,form.work_name.get(),form.work_des.get(), 
             form.date_deadline.get(),f"{form.hour.get()}:{form.minute.get()}",data[5],form.important.get())
-        show()
+        show(loc_box.get())
         top.destroy()
         
     for w in form.winfo_children():
@@ -233,22 +235,26 @@ def sua():
                     pass
 
 def hoan_thanh():
+    global selected_id
     if selected_id is None: return
     d = get_work_by_id(selected_id)
     if not d: return
     
     if d[5] == "Chưa hoàn thành":
         update(selected_id, d[1], d[2], d[3], d[4], "Hoàn thành", d[6])
-        show()
+        show(loc_box.get())
     else:
         update(selected_id, d[1], d[2], d[3], d[4], "Chưa hoàn thành", d[6])
-        show()
+        show(loc_box.get())
 
 def xoa():
-    if selected_id is not None:
-        delete(selected_id)
-        show()
-        selected_id = None
+    global selected_id
+    if selected_id is None:
+        messagebox.showwarning("Cảnh báo", "Vui lòng chọn công việc để xóa")
+        return
+    delete(selected_id)
+    show(loc_box.get())
+    selected_id = None
 
 def chon(event):
     global selected_id
