@@ -38,6 +38,8 @@ time_make = make_time.strftime("%d/%m/%Y")
 work_waitlist = {}
 for_later_waitlist = {}
 
+selected_id = None
+
 # --- CÁC HÀM XỬ LÝ DỮ LIỆU ---
 
 def open_calendar():
@@ -77,12 +79,14 @@ def show(filter_val="Tất cả"):
                         is_expired = True
                 except: pass
             
-            if row[6] == 1:
-                row[6] = 'Có'
-            else:
-                row[6] = 'Không'
+            # Xử lý important - chuyển từ 0/1 (số) hoặc string thành "Có"/"Không"
+            important_display = 'Có' if row[6] else 'Không'
+            if isinstance(row[6], str) and row[6].lower() in ('1', 'true'):
+                important_display = 'Có'
+            elif isinstance(row[6], str) and row[6].lower() in ('0', 'false'):
+                important_display = 'Không'
 
-            iid = tree.insert('', END, iid=db_id, values=(row[1],row[4], row[5], row[6]))
+            iid = tree.insert('', END, iid=db_id, values=(row[1], row[4], row[5], important_display))
             
             if is_expired:
                 tree.item(iid, tags=('expired',))
@@ -125,15 +129,15 @@ def xem_chi_tiet():
     if not data: return
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
-    form.work_name.set(data[0]); form.work_des.set(data[1]); form.date_deadline.set(data[2]); 
+    form.work_name.set(data[1]); form.work_des.set(data[2]); form.date_deadline.set(data[3]); 
     
-    time_str = data[3]
+    time_str = data[4]
     if ":" in time_str:
         h, m = time_str.split(":")
         form.hour.set(h)
         form.minute.set(m)
     
-    imp_val = data[5]
+    imp_val = data[6]
     if isinstance(imp_val, str) and imp_val.lower() == "false":
         form.important.set("0")
     elif str(imp_val).lower() in ("1", "true"):
@@ -186,6 +190,7 @@ def sua():
     if selected_id is None: return
     data = get_work_by_id(selected_id)
     if not data: return
+    id_db, work, des, deadline_date, deadline_time, status, important = data
     top = ttkb.Toplevel(root)
     form = DataEntryForm(top)
     form.work_name.set(work); form.work_des.set(des); form.date_deadline.set(deadline_date);
@@ -214,7 +219,7 @@ def sua():
             
         update(
             selected_id,form.work_name.get(),form.work_des.get(), 
-            form.date_deadline.get(),f"{form.hour.get()}:{form.minute.get()}",data[4],form.important.get())
+            form.date_deadline.get(),f"{form.hour.get()}:{form.minute.get()}",data[5],form.important.get())
         show()
         top.destroy()
         
@@ -232,11 +237,11 @@ def hoan_thanh():
     d = get_work_by_id(selected_id)
     if not d: return
     
-    if d[4] == "Chưa hoàn thành":
-        update(selected_id, d[0], d[1], d[2], d[3], "Hoàn thành", d[5])
+    if d[5] == "Chưa hoàn thành":
+        update(selected_id, d[1], d[2], d[3], d[4], "Hoàn thành", d[6])
         show()
     else:
-        update(selected_id, d[0], d[1], d[2], d[3], "Chưa hoàn thành", d[5])
+        update(selected_id, d[1], d[2], d[3], d[4], "Chưa hoàn thành", d[6])
         show()
 
 def xoa():

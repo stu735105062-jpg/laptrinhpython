@@ -1,0 +1,42 @@
+@startuml
+class DataEntryForm {
+    +work_name: StringVar
+    +work_des: StringVar
+    +date_deadline: StringVar
+    +hour: StringVar
+    +minute: StringVar
+    +important: StringVar
+    +create_form_entry(label, variable)
+    +create_dis_entry(label, variable)
+    +create_date_entry()
+    +create_time_entry()
+    +create_important_check()
+    +create_buttonbox()
+}
+
+class DatePickerDialog {
+    +parent: Misc
+    +root: Toplevel
+    +firstweekday: int
+    +startdate: date
+    +bootstyle: str
+    +disable_past: bool
+    +date_selected: date
+    +_setup_calendar()
+}
+
+class Database {
+    +connect()
+    +write(task_data)
+    +read()
+    +delete(id_xoa)
+    +update(id_sua, work, des, date, time, status, important)
+    +get_work_by_date(date)
+}
+
+Main -- DataEntryForm : uses
+Main -- DatePickerDialog : uses
+Main -- Database : uses
+DataEntryForm -- DatePickerDialog : uses
+DataEntryForm -- Database : uses
+@enduml
