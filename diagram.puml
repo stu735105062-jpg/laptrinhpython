@@ -1,42 +1,42 @@
 @startuml
-class DataEntryForm {
-    +work_name: StringVar
-    +work_des: StringVar
-    +date_deadline: StringVar
-    +hour: StringVar
-    +minute: StringVar
-    +important: StringVar
-    +create_form_entry(label, variable)
-    +create_dis_entry(label, variable)
-    +create_date_entry()
-    +create_time_entry()
-    +create_important_check()
-    +create_buttonbox()
+class BieuMauNhapLieu {
+    +ten_cong_viec: StringVar
+    +mo_ta_cong_viec: StringVar
+    +ngay_het_han: StringVar
+    +gio: StringVar
+    +phut: StringVar
+    +quan_trong: StringVar
+    +tao_o_nhap_lieu(nhan, bien)
+    +tao_o_mo_ta(nhan, bien)
+    +tao_chon_ngay()
+    +tao_chon_gio()
+    +tao_o_check_quan_trong()
+    +tao_hop_nut_bam()
 }
 
-class DatePickerDialog {
-    +parent: Misc
-    +root: Toplevel
-    +firstweekday: int
-    +startdate: date
-    +bootstyle: str
-    +disable_past: bool
-    +date_selected: date
-    +_setup_calendar()
+class HopThoaiChonNgay {
+    +cha: Misc
+    +goc: Toplevel
+    +ngay_dau_tuan: int
+    +ngay_bat_dau: date
+    +phong_cach: str
+    +vo_hieu_hoa_qua_khu: bool
+    +ngay_da_chon: date
+    +_thiet_lap_lich()
 }
 
-class Database {
-    +connect()
-    +write(task_data)
-    +read()
-    +delete(id_xoa)
-    +update(id_sua, work, des, date, time, status, important)
-    +get_work_by_date(date)
+class CoSoDuLieu {
+    +ket_noi()
+    +ghi(du_lieu_cong_viec)
+    +doc()
+    +xoa(id_xoa)
+    +cap_nhat(id_sua, cong_viec, mo_ta, ngay, gio, trang_thai, quan_trong)
+    +lay_cong_viec_theo_ngay(ngay)
 }
 
-Main -- DataEntryForm : uses
-Main -- DatePickerDialog : uses
-Main -- Database : uses
-DataEntryForm -- DatePickerDialog : uses
-DataEntryForm -- Database : uses
+Chinh -- BieuMauNhapLieu : su_dung
+Chinh -- HopThoaiChonNgay : su_dung
+Chinh -- CoSoDuLieu : su_dung
+BieuMauNhapLieu -- HopThoaiChonNgay : su_dung
+BieuMauNhapLieu -- CoSoDuLieu : su_dung
 @enduml
