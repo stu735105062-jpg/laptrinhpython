@@ -51,7 +51,7 @@ Xem sơ đồ UML chi tiết tại [diagram.puml](diagram.puml).
 
 ## Tác Giả
 
-[Your Name]
+[Nguyễn Bấ Lương, Nguyễn Trung Sơn]
 
 ## Giấy Phép
 
